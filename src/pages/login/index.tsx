@@ -4,6 +4,7 @@ import LoginSignup from '../../layout/loginSignup';
 import { useTheme } from '@mui/material/styles'; 
 import GoogleLoginButton from '../../components/SocialLoginButton/GoogleLoginButton';
 import FacebookLoginButton from '../../components/SocialLoginButton/FacebookLoginButton';
+import axios from 'axios';
 
 const InputStyles = (theme: any) => ({
     sx: {
@@ -17,6 +18,49 @@ const InputStyles = (theme: any) => ({
 
 const Login = () => {
     const theme = useTheme(); // Access the theme object
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
+    const [error, setError] = React.useState('');
+    const [loading, setLoading] = React.useState(false); // State to manage loading state
+    const [rememberMe, setRememberMe] = React.useState(false); // State to manage remember me checkbox
+    const [showPassword, setShowPassword] = React.useState(false); // State to manage password visibility
+    
+    // Login handler
+    const handleLogin = async () => {
+        setLoading(true); // Set loading state to true
+        setError(''); // Clear previous errors
+    
+        try {
+            const response = await axios.post('http://localhost:3001/users/login', {
+                email: email,
+                password: password
+            });
+    
+            if (response.status === 200) {
+                console.log(response.data);
+                // Storing the token
+                localStorage.setItem('authToken', response.data.token);
+                // You can redirect or handle successful login here, e.g., navigate('/dashboard')
+            }
+        } catch (err) {
+            if (axios.isAxiosError(err)) {
+                // Checking for specific response status
+                if (err.response?.status === 400) {
+                    setError("Validation error. Please check your inputs.");
+                } else if (err.response?.status === 401) {
+                    setError("Invalid credentials. Please try again.");
+                } else {
+                    setError("Failed to login. Please try again.");
+                }
+            } else {
+                // Handle network errors or other unknown errors
+                setError("Failed to login. Please check your connection.");
+            }
+        } finally {
+            setLoading(false); // Set loading state to false
+        }
+    };
+    
 
     return (
         <LoginSignup>
@@ -58,6 +102,8 @@ const Login = () => {
                 sx={{
                     marginTop: 0.6,
                 }}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)} // Capture email input
             />
 
 
@@ -71,7 +117,7 @@ const Login = () => {
             </Typography>
             <TextField
                 placeholder="Password"
-                type="password"
+                type={showPassword ? "text" : "password"}
                 fullWidth
                 margin="normal"
                 size="small" // Use the small size for the input field
@@ -80,7 +126,16 @@ const Login = () => {
                 sx={{
                     marginTop: 0.6,
                 }}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)} // Capture password input
             />
+
+            {/* Error Message */}
+            {error && (
+                <Typography color="error" sx={{ marginTop: 2 }}>
+                    {error}
+                </Typography>
+            )}
 
             {/* Remember Me and Forgot Password */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2, marginTop: 2 }}>
@@ -90,7 +145,7 @@ const Login = () => {
                         '&.Mui-checked': {
                             color: theme.background.main, 
                         }
-                    }} />
+                    }} checked={rememberMe} onChange={() => setRememberMe(!rememberMe)} />
                     <Typography
                         htmlFor="rememberMe"
                         component="label"
@@ -126,6 +181,7 @@ const Login = () => {
                 variant="contained"
                 color="primary"
                 fullWidth
+                onClick={handleLogin} // Add onClick event
                 sx={{
                     marginBottom: 2, 
                     marginTop: 3.5, 
@@ -140,8 +196,9 @@ const Login = () => {
                     },
 
                 }}
+                disabled={loading} // Disable button while loading
             >
-                LOG IN
+                {loading ? 'Logging in...' : 'LOG IN'}
             </Button>
 
             {/* Divider */}
