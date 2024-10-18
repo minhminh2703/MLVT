@@ -1,176 +1,166 @@
 import React, { useState } from "react";
-import { Box, TextField, Button, Typography, Divider, Checkbox } from "@mui/material";
+import { Box, TextField, Button, Typography, Divider, IconButton, InputAdornment } from "@mui/material";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 import LoginSignup from '../../layout/loginSignup';
 import { useTheme } from '@mui/material/styles';
 import GoogleLoginButton from '../../components/SocialLoginButton/GoogleLoginButton';
 import FacebookLoginButton from '../../components/SocialLoginButton/FacebookLoginButton';
 import axios from "axios";
 
-const InputStyles = (theme: any) => ({
-    sx: {
+// Define types for the component's state
+interface FormState {
+    firstName: string;
+    lastName: string;
+    username: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+}
+
+const Signup: React.FC = () => {
+    const theme = useTheme(); // Access the theme object
+
+    // State hooks to capture form input and errors
+    const [formData, setFormData] = useState<FormState>({
+        firstName: '',
+        lastName: '',
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
+    
+    const [errors, setErrors] = useState<Partial<FormState>>({});
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const handleChange = (field: keyof FormState) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormData({ ...formData, [field]: e.target.value });
+        setErrors({ ...errors, [field]: '' });
+    };
+
+    // Toggle password visibility
+    const togglePasswordVisibility = () => setShowPassword(!showPassword);
+    const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+
+    // Validate form data
+    const validate = (): boolean => {
+        const newErrors: Partial<FormState> = {};
+        if (!formData.firstName) newErrors.firstName = 'First name is required';
+        if (!formData.lastName) newErrors.lastName = 'Last name is required';
+        if (!formData.username) newErrors.username = 'Username is required';
+        if (!formData.email) newErrors.email = 'Email is required';
+        if (!formData.password) newErrors.password = 'Password is required';
+        if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    // Signup handler
+    const handleSignup = async () => {
+        if (!validate()) return;
+
+        setLoading(true);
+        try {
+            const response = await axios.post('http://localhost:3001/users/register', formData);
+            console.log(response.data);
+            // Handle successful signup, e.g., redirect or show success message
+        } catch (error) {
+            console.error(error);
+            setError("Failed to register. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const InputStyles = {
         '& input::placeholder': {
             fontSize: '0.9rem',
             color: theme.fontColor.gray,
         },
         borderRadius: 2.5,
-    }
-});
-
-const Signup = () => {
-    const theme = useTheme(); // Access the theme object
-
-    // State hooks to capture form input
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
-
-    // Signup handler
-    const handleSignup = async () => {
-        if (password !== confirmPassword) {
-            setError("Passwords do not match");
-            return;
-        }
-
-        try {
-            const response = await axios.post('http://localhost:3001/users/register', {
-                first_name: firstName,
-                last_name: lastName,
-                username: username,
-                email: email,
-                password: password
-            });
-            console.log(response.data);
-            // Redirect or show success message
-        } catch (error) {
-            console.error(error);
-            setError("Failed to register. Please try again.");
-        }
     };
 
     return (
         <LoginSignup>
-            <Typography variant="h4" gutterBottom sx={{
-                color: theme.fontColor.black,
-                fontFamily: theme.typography.h1,
-                fontWeight: theme.typography.fontWeightBold,
-                fontSize: 60,
-                marginTop: 3,
-                marginBottom: 5,
-            }}>
+            <Typography
+                variant="h4"
+                gutterBottom
+                sx={{
+                    color: theme.fontColor.black,
+                    fontFamily: theme.typography.h1,
+                    fontWeight: theme.typography.fontWeightBold,
+                    fontSize: 60,
+                    marginTop: 3,
+                    marginBottom: 5,
+                }}
+            >
                 Get Started Now!
             </Typography>
 
-            {/* First name Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2.5, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
-                First name
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Enter your first name"
-                type="text"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-            />
-
-            {/* Last name Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
-                Last name
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Enter your last name"
-                type="text"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-            />
-
-            {/* Username Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
-                Username
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Enter your username"
-                type="text"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-
-            {/* Email Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
-                Email address
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Enter your email"
-                type="email"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
+            {/* Reusable Input Component */}
+            {['firstName', 'lastName', 'username', 'email'].map((field) => (
+                <Box key={field} marginBottom={2}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
+                        {field.charAt(0).toUpperCase() + field.slice(1)} 
+                        <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
+                    </Typography>
+                    <TextField
+                        placeholder={`Enter your ${field}`}
+                        type="text"
+                        fullWidth
+                        margin="normal"
+                        size="small"
+                        required
+                        value={formData[field as keyof FormState]}
+                        onChange={handleChange(field as keyof FormState)}
+                        error={!!errors[field as keyof FormState]}
+                        helperText={errors[field as keyof FormState]}
+                        InputProps={{ sx: InputStyles }}
+                        sx={{ marginTop: 0.6 }}
+                    />
+                </Box>
+            ))}
 
             {/* Password Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
-                Password
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Enter your password"
-                type="password"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-
-            {/* Confirm Password Input */}
-            <Typography sx={{ fontSize: 14, fontWeight: 600, marginTop: 2, display:'flex', flexDirection:'row', gap: 0.7 }}>
-                Confirm Password
-                <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
-            </Typography>
-            <TextField
-                placeholder="Confirm your password"
-                type="password"
-                fullWidth
-                margin="normal"
-                size="small"
-                required
-                InputProps={InputStyles(theme)}
-                sx={{ marginTop: 0.6 }}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-            />
+            {['password', 'confirmPassword'].map((field, index) => (
+                <Box key={field} marginBottom={2}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600, display: 'flex', flexDirection: 'row', gap: 0.7 }}>
+                        {field === 'password' ? 'Password' : 'Confirm Password'}
+                        <Typography sx={{ color: theme.status.failed.fontColor, fontWeight: theme.typography.fontWeightBold }}>*</Typography>
+                    </Typography>
+                    <TextField
+                        placeholder={field === 'password' ? "Enter your password" : "Confirm your password"}
+                        type={field === 'password' ? (showPassword ? "text" : "password") : (showConfirmPassword ? "text" : "password")}
+                        fullWidth
+                        margin="normal"
+                        size="small"
+                        required
+                        value={formData[field as keyof FormState]}
+                        onChange={handleChange(field as keyof FormState)}
+                        error={!!errors[field as keyof FormState]}
+                        helperText={errors[field as keyof FormState]}
+                        InputProps={{
+                            sx: InputStyles,
+                            endAdornment: (
+                                <InputAdornment position="end">
+                                    <IconButton
+                                        onClick={field === 'password' ? togglePasswordVisibility : toggleConfirmPasswordVisibility}
+                                        edge="end"
+                                        aria-label={`toggle ${field} visibility`}
+                                    >
+                                        {field === 'password' ? (showPassword ? <VisibilityOff /> : <Visibility />) : (showConfirmPassword ? <VisibilityOff /> : <Visibility />)}
+                                    </IconButton>
+                                </InputAdornment>
+                            ),
+                        }}
+                        sx={{ marginTop: 0.6 }}
+                    />
+                </Box>
+            ))}
 
             {/* Error Message */}
             {error && <Typography sx={{ color: 'red' }}>{error}</Typography>}
@@ -180,6 +170,7 @@ const Signup = () => {
                 variant="contained"
                 color="primary"
                 fullWidth
+                disabled={loading}
                 sx={{
                     marginBottom: 2,
                     marginTop: 5.5,
@@ -195,7 +186,7 @@ const Signup = () => {
                 }}
                 onClick={handleSignup}
             >
-                SIGN UP
+                {loading ? 'Signing up...' : 'SIGN UP'}
             </Button>
 
             {/* Divider */}

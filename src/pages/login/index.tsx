@@ -21,15 +21,50 @@ const Login = () => {
     const [email, setEmail] = React.useState('');
     const [password, setPassword] = React.useState('');
     const [error, setError] = React.useState('');
+    const [emailError, setEmailError] = React.useState(false); // State for email validation error
+    const [passwordError, setPasswordError] = React.useState(false); // State for password validation error
     const [loading, setLoading] = React.useState(false); // State to manage loading state
     const [rememberMe, setRememberMe] = React.useState(false); // State to manage remember me checkbox
     const [showPassword, setShowPassword] = React.useState(false); // State to manage password visibility
     
+    // Validate email onBlur
+    const validateEmail = () => {
+        if (!email) {
+            setEmailError(true);
+        } else {
+            setEmailError(false);
+        }
+    };
+
+    // Validate password onBlur
+    const validatePassword = () => {
+        if (!password) {
+            setPasswordError(true);
+        } else {
+            setPasswordError(false);
+        }
+    };
+
     // Login handler
     const handleLogin = async () => {
-        setLoading(true); // Set loading state to true
         setError(''); // Clear previous errors
-    
+        let valid = true;
+
+        // Validate email and password before submitting
+        if (!email) {
+            setEmailError(true);
+            valid = false;
+        }
+
+        if (!password) {
+            setPasswordError(true);
+            valid = false;
+        }
+
+        if (!valid) return; // Stop if validation fails
+
+        setLoading(true); // Set loading state to true
+
         try {
             const response = await axios.post('http://localhost:3001/users/login', {
                 email: email,
@@ -104,8 +139,10 @@ const Login = () => {
                 }}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)} // Capture email input
+                onBlur={validateEmail} // Trigger validation on blur
+                error={emailError} // Trigger error state
+                helperText={emailError ? 'Email is required' : ''} // Show error message if email is empty
             />
-
 
             {/* Password Input */}
             <Typography sx={{
@@ -128,6 +165,9 @@ const Login = () => {
                 }}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)} // Capture password input
+                onBlur={validatePassword} // Trigger validation on blur
+                error={passwordError} // Trigger error state
+                helperText={passwordError ? 'Password is required' : ''} // Show error message if password is empty
             />
 
             {/* Error Message */}
